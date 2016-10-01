@@ -1,0 +1,30 @@
+{
+  "name": "demo-riot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {},
+  "devDependencies": {
+    "babel-cli": "^6.14.0",
+    "babel-preset-es2015-rollup": "^1.2.0",
+    "eslint": "^3.6.1",
+    "eslint-config-standard": "^6.1.0",
+    "eslint-plugin-promise": "^2.0.1",
+    "eslint-plugin-standard": "^2.0.1",
+    "express": "^4.14.0",
+    "express-ws": "^2.0.0",
+    "q": "^1.4.1",
+    "rethinkdb": "^2.3.3",
+    "riot": "^2.6.2",
+    "rollup": "^0.36.1",
+    "rollup-plugin-babel": "^2.6.1",
+    "rollup-plugin-commonjs": "^5.0.4",
+    "rollup-plugin-node-resolve": "^2.0.0",
+    "rollup-plugin-riot": "^0.4.3"
+  }
+}
