@@ -30,9 +30,7 @@ class Controller{
   handle_watch(ticket, predicate, args){
     let ret = {ticket: ticket, response: 'watch'}
     let pred = this[predicate](...args)
-    pred.changes().run(this.conn, (err, cursor)=>{
-      // console.log('cursor:', cursor)
-      // console.log('error:', err)
+    pred.changes({includeInitial: true}).run(this.conn, (err, cursor)=>{
       cursor.each((err, data)=>{ret.data=data; this.ws.send(JSON.stringify(ret))})
       // cursor.on('data', (change) => {ret.data=change; this.ws.send(JSON.stringify(ret))})
     })
