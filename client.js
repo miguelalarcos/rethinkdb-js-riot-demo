@@ -11,38 +11,39 @@ class Controller{
   }
 
   start(){
-    this.ws = new WebSocket('ws://' + document.location.hostname + ':3000')
+    this.ws = new WebSocket('ws://' + document.location.hostname + ':8000')
     this.ws.onopen = () => riot.mount('app')
-    this.ws.onmessage = (e) => this.notify(e.data)
+    this.ws.onmessage = (e) => {console.log(e.data); this.notify(e.data)}
+    this.ws.onclose = (e) => console.log(e)
+    this.ws.onerror = (e) => console.log('error', e)
   }
 
   notify(msg){
     msg = JSON.parse(msg)
-    response = msg['response']
-    ticket = msg['ticket']
-    value = msg['value']
-    change = msg.change
+    let response = msg.response
+    let ticket = msg.ticket
+    let data = msg.data
     if(response == 'rpc'){
-      this.promises[ticket].resolve(value)
+      this.promises[ticket].resolve(data)
       delete this.promises[ticket]
     }
     else if (response == 'watch') {
-      this.watches[ticket](change)
+      this.watches[ticket](data)
     }
   }
 
   rpc(method, ...args){
-    t = this.ticket++
-    msg = {ticket: t, method: 'rpc_' + method, args: args}
+    let t = this.ticket++
+    let msg = {ticket: t, method: 'rpc_' + method, args: args}
     this.ws.send(JSON.stringify(msg))
-    deferred = Q.defer()
+    let deferred = Q.defer()
     this.promises[t] = deferred
     return deferred.promise
   }
 
   watch(callback, predicate, ...args){
-    t = this.ticket++
-    msg = {ticket: t, method: 'watch_' + predicate, args: args}
+    let t = this.ticket++
+    let msg = {ticket: t, method: 'watch_' + predicate, args: args}
     this.ws.send(JSON.stringify(msg))
     this.watches[t] = callback
   }

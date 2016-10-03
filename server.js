@@ -6,30 +6,35 @@ expressWs(app)
 
 index = '<body><app></app><script src="bundle.js"></script></body>'
 
+let clients = []
+
 class Controller{
-  constructor(send, conn){
-    this.send = send
+  constructor(ws, conn){
+    this.ws = ws
     this.conn = conn
   }
   notify(msg){
     console.log(msg)
     msg = JSON.parse(msg)
-    if(msg.command.startsWith('rpc_')){
-      handle_rpc(msg.ticket, msg.command, msg.args)
+    if(msg.method.startsWith('rpc_')){
+      this.handle_rpc(msg.ticket, msg.method, msg.args)
     }
-    else if (msg.command.startsWith('watch_')) {
-      handle_watch(msg.ticket, msg.predicate, msg.args)
+    else if (msg.method.startsWith('watch_')) {
+      this.handle_watch(msg.ticket, msg.method, msg.args)
     }
   }
   handle_rpc(ticket, command, args){
-    ret = {ticket: ticket, response: 'rpc'}
-    this[command](...args, (val)=>{ret.value=val; this.send(JSON.stringify(ret))})
+    let ret = {ticket: ticket, response: 'rpc'}
+    this[command](...args, (val)=>{ret.data=val; this.ws.send(JSON.stringify(ret))})
   }
   handle_watch(ticket, predicate, args){
-    ret = {ticket: ticket, response: 'watch'}
-    pred = this[predicate](...args)
+    let ret = {ticket: ticket, response: 'watch'}
+    let pred = this[predicate](...args)
     pred.changes().run(this.conn, (err, cursor)=>{
-        cursor.on('data', (change) => ret.change=change; this.send(JSON.stringify(ret)))
+      // console.log('cursor:', cursor)
+      // console.log('error:', err)
+      cursor.each((err, data)=>{ret.data=data; this.ws.send(JSON.stringify(ret))})
+      // cursor.on('data', (change) => {ret.data=change; this.ws.send(JSON.stringify(ret))})
     })
   }
   rpc_insert(collection, doc, callback){
@@ -43,20 +48,25 @@ class Controller{
 
 class MySerever extends Controller{
   rpc_add(a,b, callback){callback(a+b)}
-  watch_a(){r.table('a')}
+  watch_a(){return r.table('a')}
 }
+
+app.use(express.static('.'))
 
 app.get('/', function(req, res, next){
   res.send(index)
   res.end()
 });
 
-app.ws('/', function(ws, req) {
-  server = new MySerever(ws.send, conn)
-  ws.on('message', function(msg) {
-    server.notify(msg)
+r.connect().then((conn)=>{
+  app.ws('/', function(ws, req) {
+    clients.push(ws)
+    server = new MySerever(ws, conn)
+    ws.on('message', function(msg) {
+      server.notify(msg)
+    })
+    ws.on('close', ()=>server.close())
   })
-  ws.on('close', ()=>server.close())
 })
 
 app.listen(8000)

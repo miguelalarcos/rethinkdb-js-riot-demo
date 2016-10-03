@@ -5,4 +5,4 @@
 
 import {controller} from './client.js'
 
-controller().start()
+controller.start()
