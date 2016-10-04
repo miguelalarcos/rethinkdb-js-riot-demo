@@ -12,6 +12,7 @@ class Controller{
   constructor(ws, conn){
     this.ws = ws
     this.conn = conn
+    this.cursors = []
   }
   notify(msg){
     console.log(msg)
@@ -31,6 +32,7 @@ class Controller{
     let ret = {ticket: ticket, response: 'watch'}
     let pred = this[predicate](...args)
     pred.changes({includeInitial: true}).run(this.conn, (err, cursor)=>{
+      this.cursors.push(cursor)
       cursor.each((err, data)=>{ret.data=data; this.ws.send(JSON.stringify(ret))})
       // cursor.on('data', (change) => {ret.data=change; this.ws.send(JSON.stringify(ret))})
     })
@@ -41,7 +43,7 @@ class Controller{
   rpc_update(collection, id, doc, callback){
     r.table(collection).get(id).update(doc).run(this.conn).then((doc)=>callback(doc.replaced))
   }
-  close(){console.log('close')}
+  close(){for(let c of this.cursors){c.close()};console.log('close')}
 }
 
 class MySerever extends Controller{
@@ -59,11 +61,11 @@ app.get('/', function(req, res, next){
 r.connect().then((conn)=>{
   app.ws('/', function(ws, req) {
     clients.push(ws)
-    server = new MySerever(ws, conn)
+    let server = new MySerever(ws, conn)
     ws.on('message', function(msg) {
       server.notify(msg)
     })
-    ws.on('close', ()=>server.close())
+    ws.on('close', ()=>{server.close(); server=null})
   })
 })
 
