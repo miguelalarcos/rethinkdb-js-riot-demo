@@ -28,7 +28,8 @@ class Controller{
       delete this.promises[ticket]
     }
     else if (response == 'watch') {
-      this.watches[ticket](data)
+      const method = this.watches[ticket] //(data)
+      if(method){method(data)}
     }
   }
 
@@ -46,7 +47,14 @@ class Controller{
     let msg = {ticket: t, method: 'watch_' + predicate, args: args}
     this.ws.send(JSON.stringify(msg))
     this.watches[t] = callback
+    return t
+  }
+
+  update(collection, id, doc){
+      this.rpc('update', collection, id, doc)
   }
 }
 
 export const controller = new Controller()
+
+export const start = ()=> controller.start()

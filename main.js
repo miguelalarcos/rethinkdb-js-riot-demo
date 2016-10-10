@@ -1,8 +1,3 @@
-//import riot from 'riot'
-//import './todo.tag'
+import {start} from './client.js'
 
-//riot.mount('todo')
-
-import {controller} from './client.js'
-
-controller.start()
+start()

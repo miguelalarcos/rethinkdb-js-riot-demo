@@ -6,8 +6,6 @@ expressWs(app)
 
 index = '<body><app></app><script src="bundle.js"></script></body>'
 
-let clients = []
-
 class Controller{
   constructor(ws, conn){
     this.ws = ws
@@ -46,27 +44,25 @@ class Controller{
   close(){for(let c of this.cursors){c.close()};console.log('close')}
 }
 
-class MySerever extends Controller{
-  rpc_add(a,b, callback){callback(a+b)}
-  watch_a(){return r.table('a')}
+const start = (CustomServer) =>{
+  app.use(express.static('.'))
+
+  app.get('/', function(req, res, next){
+    res.send(index)
+    res.end()
+  });
+
+  r.connect().then((conn)=>{
+    app.ws('/', function(ws, req) {
+      let server = new CustomServer(ws, conn)
+      ws.on('message', function(msg) {
+        server.notify(msg)
+      })
+      ws.on('close', ()=>{server.close(); server=null})
+    })
+  })
+
+  app.listen(8000)
 }
 
-app.use(express.static('.'))
-
-app.get('/', function(req, res, next){
-  res.send(index)
-  res.end()
-});
-
-r.connect().then((conn)=>{
-  app.ws('/', function(ws, req) {
-    clients.push(ws)
-    let server = new MySerever(ws, conn)
-    ws.on('message', function(msg) {
-      server.notify(msg)
-    })
-    ws.on('close', ()=>{server.close(); server=null})
-  })
-})
-
-app.listen(8000)
+module.exports = {Controller: Controller, start: start}
